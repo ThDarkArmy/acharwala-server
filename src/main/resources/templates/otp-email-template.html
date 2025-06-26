@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Your OTP for First-Buy.in Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        h2 {
+            color: #2b2e4a;
+        }
+        .otp {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e63946;
+            text-align: center;
+            margin: 30px 0;
+            letter-spacing: 6px;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        a {
+            color: #0077cc;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Hello {{USER_NAME}},</h2>
+    <p>
+        Welcome to <strong>First-Buy.in</strong>, the world’s 1st reward-based property discovery platform.<br>
+        Please use the following One Time Password (OTP) to complete your verification process.
+    </p>
+
+    <div class="otp">
+        {{OTP_CODE}}
+    </div>
+
+    <div class="footer">
+        <p>Sent by <strong>First-Buy.in</strong><br>
+            The world’s 1st reward-based property platform</p>
+        <p>
+            Website: <a href="https://www.first-buy.in">www.first-buy.in</a><br>
+            Support: <a href="mailto:first.buyrewards@gmail.com">first.buyrewards@gmail.com</a><br>
+            Official Verification Email: <a href="mailto:firstbuyrewards.check@gmail.com">firstbuyrewards.check@gmail.com</a>
+        </p>
+        <p>This is an auto-generated message. Please do not reply.<br>
+            We’re building something legendary. Thank you for being a part of it.</p>
+    </div>
+</div>
+</body>
+</html>
