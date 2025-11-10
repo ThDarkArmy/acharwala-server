@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,10 +29,17 @@ public class SecurityConfiguration {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
-				.csrf(csrf -> csrf.disable())
+				.csrf(AbstractHttpConfigurer::disable)
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/v1/users/login", "/api/v1/users/signup", "/api/v1/users/verify-otp", "/api/v1/users/reset-password", "/health-check", "/.well-known/pki-validation/424EE9ADEF258F379410B6E382AEF7C7.txt", "/swagger-ui/**", "/api-docs/**").permitAll()
+						.requestMatchers("/api/v1/users/login",
+								"/api/v1/users/signup",
+								"/api/v1/users/verify-otp",
+								"/api/v1/users/reset-password",
+								"/health-check",
+								"/swagger-ui/**",
+								"/swagger-ui.html",
+								"/v3/api-docs/**").permitAll()
 						.anyRequest().authenticated()
 				)
 				.sessionManagement(session -> session

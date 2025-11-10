@@ -3,6 +3,8 @@ package tda.darkarmy.acharwala.util;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import tda.darkarmy.acharwala.exception.FileStorageException;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
-public class FileStorageServiceImpl {
+public class FileStorageService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -25,7 +27,7 @@ public class FileStorageServiceImpl {
 
             return "/uploads/" + fileName; // Return accessible URL
         } catch (IOException ex) {
-            throw new FileStorageException("Failed to store file", ex);
+            throw new FileStorageException("Failed to store file"+ex);
         }
     }
 
@@ -35,7 +37,7 @@ public class FileStorageServiceImpl {
             Path filePath = Paths.get(uploadDir).resolve(fileName).normalize();
             Files.deleteIfExists(filePath);
         } catch (IOException ex) {
-            throw new FileStorageException("Failed to delete file", ex);
+            throw new FileStorageException("Failed to delete file" +ex);
         }
     }
 }
