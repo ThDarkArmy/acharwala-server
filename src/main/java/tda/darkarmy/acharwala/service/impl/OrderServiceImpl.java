@@ -25,14 +25,13 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final CartService cartService;
-    private UserService userService;
-    private UserRepository userRepository;
+    private final UserService userService;
+    private final UserRepository userRepository;
 
     @Override
-    public Order createOrder(OrderRequest orderRequest) {
+    public OrderEntity createOrder(OrderRequest orderRequest) {
         User user = userService.getLoggedInUser();
         Cart cart = cartService.getOrCreateCart();
 
@@ -48,14 +47,14 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        Order order = new Order();
+        OrderEntity order = new OrderEntity();
         order.setUser(user);
         order.setShippingAddress(orderRequest.getShippingAddress());
         order.setBillingAddress(orderRequest.getBillingAddress() != null ?
                 orderRequest.getBillingAddress() : orderRequest.getShippingAddress());
         order.setPaymentMethod(orderRequest.getPaymentMethod());
-        order.setStatus(Order.OrderStatus.PENDING);
-        order.setPaymentStatus(Order.PaymentStatus.PENDING);
+        order.setStatus(OrderEntity.OrderStatus.PENDING);
+        order.setPaymentStatus(OrderEntity.PaymentStatus.PENDING);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -78,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
         order.setFinalAmount(calculateFinalAmount(totalAmount, orderRequest.getShippingCharge()));
         order.setShippingCharge(orderRequest.getShippingCharge());
 
-        Order savedOrder = orderRepository.save(order);
+        OrderEntity savedOrder = orderRepository.save(order);
 
         // Clear the cart after successful order creation
         cartService.clearCart();
@@ -92,57 +91,57 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Order getOrderById(Long orderId) {
+    public OrderEntity getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
     @Override
-    public Order getOrderByOrderNumber(String orderNumber) {
+    public OrderEntity getOrderByOrderNumber(String orderNumber) {
         return orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
     @Override
-    public List<Order> getUserOrders() {
+    public List<OrderEntity> getUserOrders() {
         User user = userService.getLoggedInUser();
         return orderRepository.findByUserOrderByOrderDateDesc(user);
     }
 
     @Override
-    public Page<Order> getUserOrdersPaginated(Pageable pageable) {
+    public Page<OrderEntity> getUserOrdersPaginated(Pageable pageable) {
         User user = userService.getLoggedInUser();
         return orderRepository.findByUser(user, pageable);
     }
 
     @Override
-    public List<Order> getAllOrders() {
+    public List<OrderEntity> getAllOrders() {
         return orderRepository.findAllByOrderByOrderDateDesc();
     }
 
     @Override
-    public Page<Order> getAllOrdersPaginated(Pageable pageable) {
+    public Page<OrderEntity> getAllOrdersPaginated(Pageable pageable) {
         return orderRepository.findAll(pageable);
     }
 
     @Override
-    public Order updateOrderStatus(Long orderId, Order.OrderStatus status) {
-        Order order = getOrderById(orderId);
+    public OrderEntity updateOrderStatus(Long orderId, OrderEntity.OrderStatus status) {
+        OrderEntity order = getOrderById(orderId);
         order.setStatus(status);
         order.setUpdatedAt(LocalDateTime.now());
         return orderRepository.save(order);
     }
 
     @Override
-    public Order cancelOrder(Long orderId) {
+    public OrderEntity cancelOrder(Long orderId) {
         User user = userService.getLoggedInUser();
-        Order order = getOrderById(orderId);
+        OrderEntity order = getOrderById(orderId);
 
         if (!order.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Not authorized to cancel this order");
         }
 
-        if (order.getStatus().ordinal() >= Order.OrderStatus.SHIPPED.ordinal()) {
+        if (order.getStatus().ordinal() >= OrderEntity.OrderStatus.SHIPPED.ordinal()) {
             throw new RuntimeException("Cannot cancel order after it has been shipped");
         }
 
@@ -155,33 +154,33 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        order.setStatus(Order.OrderStatus.CANCELLED);
-        order.setPaymentStatus(Order.PaymentStatus.REFUNDED);
+        order.setStatus(OrderEntity.OrderStatus.CANCELLED);
+        order.setPaymentStatus(OrderEntity.PaymentStatus.REFUNDED);
         order.setUpdatedAt(LocalDateTime.now());
 
         return orderRepository.save(order);
     }
 
     @Override
-    public Order processPaymentSuccess(String paymentId, String transactionId) {
-        Order order = orderRepository.findByPaymentId(paymentId)
+    public OrderEntity processPaymentSuccess(String paymentId, String transactionId) {
+        OrderEntity order = orderRepository.findByPaymentId(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found for payment ID: " + paymentId));
 
-        order.setPaymentStatus(Order.PaymentStatus.SUCCESS);
+        order.setPaymentStatus(OrderEntity.PaymentStatus.SUCCESS);
         order.setTransactionId(transactionId);
-        order.setStatus(Order.OrderStatus.CONFIRMED);
+        order.setStatus(OrderEntity.OrderStatus.CONFIRMED);
         order.setUpdatedAt(LocalDateTime.now());
 
         return orderRepository.save(order);
     }
 
     @Override
-    public Order processPaymentFailure(String paymentId, String errorMessage) {
-        Order order = orderRepository.findByPaymentId(paymentId)
+    public OrderEntity processPaymentFailure(String paymentId, String errorMessage) {
+        OrderEntity order = orderRepository.findByPaymentId(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found for payment ID: " + paymentId));
 
-        order.setPaymentStatus(Order.PaymentStatus.FAILED);
-        order.setStatus(Order.OrderStatus.FAILED);
+        order.setPaymentStatus(OrderEntity.PaymentStatus.FAILED);
+        order.setStatus(OrderEntity.OrderStatus.FAILED);
         order.setUpdatedAt(LocalDateTime.now());
 
         // Restore inventory if payment fails
@@ -197,47 +196,47 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Order> getOrdersByStatus(Order.OrderStatus status) {
+    public List<OrderEntity> getOrdersByStatus(OrderEntity.OrderStatus status) {
         return orderRepository.findByStatusOrderByOrderDateDesc(status);
     }
 
     @Override
-    public Order assignToSHG(Long orderId, Long shgUserId) {
+    public OrderEntity assignToSHG(Long orderId, Long shgUserId) {
         User shgUser = userRepository.findById(shgUserId).orElseThrow(()-> new ResourceNotFoundException("SHG didi not found"));
         if (!shgUser.getRole().equals(Role.SHG_DIDI)) {
             throw new RuntimeException("User is not an SHG Didi");
         }
 
-        Order order = getOrderById(orderId);
+        OrderEntity order = getOrderById(orderId);
         order.setAssignedSHG(shgUser);
-        order.setStatus(Order.OrderStatus.PROCESSING);
+        order.setStatus(OrderEntity.OrderStatus.PROCESSING);
         order.setUpdatedAt(LocalDateTime.now());
 
         return orderRepository.save(order);
     }
 
     @Override
-    public Order assignToDeliveryBoy(Long orderId, Long deliveryBoyId) {
+    public OrderEntity assignToDeliveryBoy(Long orderId, Long deliveryBoyId) {
         User deliveryBoy = userRepository.findById(deliveryBoyId).orElseThrow(()-> new ResourceNotFoundException("Delivery boy not found"));
         if (!deliveryBoy.getRole().equals(Role.DELIVERY_BOY)) {
             throw new RuntimeException("User is not a delivery boy");
         }
 
-        Order order = getOrderById(orderId);
+        OrderEntity order = getOrderById(orderId);
         order.setDeliveryBoy(deliveryBoy);
-        order.setStatus(Order.OrderStatus.OUT_FOR_DELIVERY);
+        order.setStatus(OrderEntity.OrderStatus.OUT_FOR_DELIVERY);
         order.setUpdatedAt(LocalDateTime.now());
 
         return orderRepository.save(order);
     }
 
     @Override
-    public List<Order> getOrdersByAssignedSHG(User shgUser) {
+    public List<OrderEntity> getOrdersByAssignedSHG(User shgUser) {
         return List.of();
     }
 
     @Override
-    public List<Order> getOrdersByDeliveryBoy(User deliveryBoy) {
+    public List<OrderEntity> getOrdersByDeliveryBoy(User deliveryBoy) {
         return List.of();
     }
 }

@@ -34,11 +34,11 @@ public class CartServiceImpl implements CartService {
         User user = userService.getLoggedInUser();
         Optional<Cart> cartOptional = cartRepository.findByUser(user);
         if(cartOptional.isPresent()){
+            return cartOptional.get();
+        }else {
             Cart cart = new Cart();
             cart.setUser(user);
             return cartRepository.save(cart);
-        }else {
-            return cartOptional.get();
         }
     }
 

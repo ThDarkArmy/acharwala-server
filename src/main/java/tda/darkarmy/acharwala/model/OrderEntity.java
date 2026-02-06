@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "orders")
-public class Order {
+public class OrderEntity {
 
     public enum OrderStatus {
         PENDING, CONFIRMED, PROCESSING, SHIPPED, OUT_FOR_DELIVERY,

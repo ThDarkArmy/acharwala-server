@@ -125,4 +125,60 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
         return productRepository.saveAll(products);
     }
+
+    @Override
+    public Product createProductFromRequest(tda.darkarmy.acharwala.dto.CreateProductRequest req) {
+        String imageUrl = null;
+        if (req.getImageFile() != null && !req.getImageFile().isEmpty()) {
+            imageUrl = fileStorageService.storeFile(req.getImageFile());
+        }
+        Product product = Product.builder()
+                .name(req.getName())
+                .category(req.getCategory())
+                .price(req.getPrice())
+                .brand(req.getBrand())
+                .expiryDate(req.getExpiryDate())
+                .manufacturingDate(req.getManufacturingDate())
+                .image(imageUrl)
+                .numberOfQuantities(req.getStockQuantity())
+                .discount(req.getDiscount() != null ? req.getDiscount() : java.math.BigDecimal.ZERO)
+                .isAvailable(req.getAvailable() != null ? req.getAvailable() : true)
+                .oilType(req.getOilType())
+                .ingredients(req.getIngredients() != null ? req.getIngredients() : java.util.List.of())
+                .description(req.getDescription())
+                .isCustomizable(req.getIsCustomizable() != null ? req.getIsCustomizable() : false)
+                .qrCode(req.getQrCode())
+                .amount(req.getAmount())
+                .build();
+        return productRepository.save(product);
+    }
+
+    @Override
+    public Product updateProductFromRequest(Long id, tda.darkarmy.acharwala.dto.UpdateProductRequest req) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new tda.darkarmy.acharwala.exception.ResourceNotFoundException("Product not found"));
+        if (req.getName() != null) product.setName(req.getName());
+        if (req.getCategory() != null) product.setCategory(req.getCategory());
+        if (req.getPrice() != null) product.setPrice(req.getPrice());
+        if (req.getBrand() != null) product.setBrand(req.getBrand());
+        if (req.getExpiryDate() != null) product.setExpiryDate(req.getExpiryDate());
+        if (req.getManufacturingDate() != null) product.setManufacturingDate(req.getManufacturingDate());
+        if (req.getStockQuantity() != null) product.setNumberOfQuantities(req.getStockQuantity());
+        if (req.getDiscount() != null) product.setDiscount(req.getDiscount());
+        if (req.getAvailable() != null) product.setIsAvailable(req.getAvailable());
+        if (req.getOilType() != null) product.setOilType(req.getOilType());
+        if (req.getIngredients() != null) product.setIngredients(req.getIngredients());
+        if (req.getDescription() != null) product.setDescription(req.getDescription());
+        if (req.getIsCustomizable() != null) product.setIsCustomizable(req.getIsCustomizable());
+        if (req.getQrCode() != null) product.setQrCode(req.getQrCode());
+        if (req.getAmount() != null) product.setAmount(req.getAmount());
+        if (req.getImageFile() != null && !req.getImageFile().isEmpty()) {
+            if (product.getImage() != null) {
+                fileStorageService.deleteFile(product.getImage());
+            }
+            String imageUrl = fileStorageService.storeFile(req.getImageFile());
+            product.setImage(imageUrl);
+        }
+        return productRepository.save(product);
+    }
 }

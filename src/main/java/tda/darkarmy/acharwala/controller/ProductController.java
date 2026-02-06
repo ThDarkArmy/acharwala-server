@@ -9,7 +9,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,20 +42,10 @@ public class ProductController {
     )
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Product> createProduct(
-            @Valid
-            @Parameter(
-                    description = "Product JSON data",
-                    required = true,
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ProductDto.class)
-                    )
-            )
-            @ModelAttribute ProductDto productDto){
-
+            @Valid @ModelAttribute tda.darkarmy.acharwala.dto.CreateProductRequest createProductRequest) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(productService.createProduct(productDto));
+                .body(productService.createProductFromRequest(createProductRequest));
     }
 
     // 2. Update Product (with optional image)
@@ -64,27 +56,8 @@ public class ProductController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
-            @Valid
-            @Parameter(
-                    description = "Product JSON data",
-                    required = true,
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ProductDto.class)
-                    )
-            )
-            @RequestPart("productDto") ProductDto productDto,
-
-            @Parameter(
-                    description = "Optional product image file",
-                    required = false,
-                    content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-            )
-            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
-
-        return ResponseEntity.ok(
-                productService.updateProductWithImage(id, productDto, imageFile)
-        );
+            @Valid @ModelAttribute tda.darkarmy.acharwala.dto.UpdateProductRequest updateProductRequest) {
+        return ResponseEntity.ok(productService.updateProductFromRequest(id, updateProductRequest));
     }
 
     // 3. Get Product by ID
@@ -94,10 +67,23 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
+    private static final List<String> ALLOWED_SORT_FIELDS = List.of(
+            "id", "name", "category", "price", "brand", "expiryDate", "manufacturingDate", "numberOfQuantities", "discount", "isAvailable");
+
     // 4. Get All Products (Paginated)
     @Operation(summary = "Get all products (paginated)")
     @GetMapping
-    public ResponseEntity<Page<Product>> getAllProducts(Pageable pageable) {
+    public ResponseEntity<Page<Product>> getAllProducts(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size (max 100)") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort by: id, name, category, price, brand, expiryDate, manufacturingDate") @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Sort direction: asc or desc") @RequestParam(defaultValue = "asc") String direction) {
+        // Clamp size to avoid huge requests
+        size = Math.min(Math.max(1, size), 100);
+        // Use id if sortBy is not a valid Product property (e.g. Swagger placeholder "string")
+        String validSortBy = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(validSortBy).descending() : Sort.by(validSortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
 

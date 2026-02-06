@@ -10,7 +10,9 @@ import java.util.List;
 public interface ProductService {
     // Takes DTO, returns Entity
     Product createProduct(ProductDto productDto);
+    Product createProductFromRequest(tda.darkarmy.acharwala.dto.CreateProductRequest createProductRequest);
     Product updateProductWithImage(Long id, ProductDto productDto, MultipartFile imageFile);
+    Product updateProductFromRequest(Long id, tda.darkarmy.acharwala.dto.UpdateProductRequest updateProductRequest);
 
     // Read operations return Entities
     Product getProductById(Long id);
